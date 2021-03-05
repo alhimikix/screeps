@@ -50,6 +50,29 @@ Creep.prototype.doBuild = function () {
     return true
 }
 
+Creep.prototype.doRepair = function () {
+
+    if (this.store.getUsedCapacity() === 0)
+        return false;
+
+    const target = this.pos.findClosestByPath(FIND_STRUCTURES,{
+        filter:(structure) =>
+            structure.structureType !== STRUCTURE_WALL
+            && structure.structureType !== STRUCTURE_RAMPART
+            && structure.structureType !== STRUCTURE_ROAD
+            && structure.hits < (structure.hitsMax / 2)
+    });
+
+    if (target){
+        if(this.repair(target) === ERR_NOT_IN_RANGE) {
+            this.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+        }
+    }else {
+        return this.doBuild()
+    }
+
+    return true
+}
 
 Creep.prototype.doStore = function () {
     if (!this.store.getUsedCapacity())
@@ -140,12 +163,29 @@ Creep.prototype.doStore = function () {
 
 Creep.prototype.keepEnergy = function () {
 
-    let container = this.pos.findClosestByPath(FIND_STRUCTURES, {
-        filter: s => (
-            (s.structureType === STRUCTURE_CONTAINER || s.structureType === STRUCTURE_STORAGE)
-            && s.store[RESOURCE_ENERGY] > 0)
-            || (s.structureType === STRUCTURE_LINK && s.energy > 0)
-    });
+    let container;
+
+    /*Подымаем выкинутые вещи*/
+    if (!container)
+        container = this.pos.findClosestByPath(FIND_DROPPED_RESOURCES);
+
+    /*Руины*/
+    if (!container)
+        container = this.pos.findClosestByPath(FIND_RUINS, {
+            filter: s => (
+                s.store[RESOURCE_ENERGY] > 0
+            )
+        });
+
+
+    if (!container)
+        container = this.pos.findClosestByPath(FIND_STRUCTURES, {
+            filter: s => (
+                (s.structureType === STRUCTURE_CONTAINER || s.structureType === STRUCTURE_STORAGE)
+                && s.store[RESOURCE_ENERGY] > 0)
+                || (s.structureType === STRUCTURE_LINK && s.energy > 0)
+        });
+
 
     if (container) {
         if (this.withdraw(container, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
@@ -154,7 +194,7 @@ Creep.prototype.keepEnergy = function () {
         return true;
     }
     else{
-        return this.mineEnergy(this);
+        return this.mineEnergy();
     }
 
 }
