@@ -1,4 +1,6 @@
-require('protos')
+/*Init default functions*/
+require('prototypes')
+
 const gc = require('gc')
 const spawner = require('spawner')
 const runner = require('runner')
@@ -6,5 +8,5 @@ const runner = require('runner')
 module.exports.loop = ()=>{
     gc();
     spawner();
-    runner()
+    runner();
 }
