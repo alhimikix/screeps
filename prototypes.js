@@ -16,6 +16,7 @@ Creep.prototype.mineEnergy = function () {
         source = this.pos.findClosestByRange(FIND_SOURCES_ACTIVE)
         this.moveTo(source)
     }
+
     return true;
 };
 
@@ -39,11 +40,11 @@ Creep.prototype.doBuild = function () {
         return false;
 
     let target = this.pos.findClosestByPath(FIND_CONSTRUCTION_SITES)
-    if (target){
-        if(this.build(target) === ERR_NOT_IN_RANGE) {
+    if (target) {
+        if (this.build(target) === ERR_NOT_IN_RANGE) {
             this.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
         }
-    }else {
+    } else {
         return this.doUpgrade()
     }
 
@@ -55,19 +56,19 @@ Creep.prototype.doRepair = function () {
     if (this.store.getUsedCapacity() === 0)
         return false;
 
-    const target = this.pos.findClosestByPath(FIND_STRUCTURES,{
-        filter:(structure) =>
+    const target = this.pos.findClosestByPath(FIND_STRUCTURES, {
+        filter: (structure) =>
             structure.structureType !== STRUCTURE_WALL
             && structure.structureType !== STRUCTURE_RAMPART
             && structure.structureType !== STRUCTURE_ROAD
-            && structure.hits < (structure.hitsMax / 2)
+            && structure.hits < (structure.hitsMax * 0.75)
     });
 
-    if (target){
-        if(this.repair(target) === ERR_NOT_IN_RANGE) {
+    if (target) {
+        if (this.repair(target) === ERR_NOT_IN_RANGE) {
             this.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
         }
-    }else {
+    } else {
         return this.doBuild()
     }
 
@@ -88,10 +89,9 @@ Creep.prototype.doStore = function () {
     }*/
 
 
-
     // ищем ближийший накопитель (Спавн или дополнение)
-    if(!structure){
-        let structures = this.pos.findInRange(FIND_STRUCTURES, 3,{
+    if (!structure) {
+        let structures = this.pos.findInRange(FIND_STRUCTURES, 3, {
             filter: (s) => ((
                 s.structureType === STRUCTURE_SPAWN
                 || s.structureType === STRUCTURE_EXTENSION
@@ -99,15 +99,15 @@ Creep.prototype.doStore = function () {
                 && s.energy < s.energyCapacity)
         });
 
-        if(structures.length > 0){
+        if (structures.length > 0) {
             structure = structures[0];
         }
     }
 
 
     //аполняем контейнеры
-    if (!structure ){
-        if(this.room.controller.level>1){
+    if (!structure) {
+        if (this.room.controller.level > 1) {
             structure = this.pos.findClosestByPath(FIND_STRUCTURES, {
                 filter: (s) => s.structureType === STRUCTURE_CONTAINER && s.store.getFreeCapacity() > 0
             });
@@ -115,17 +115,17 @@ Creep.prototype.doStore = function () {
     }
 
     //если уровень контроллера позволяет строить стораджи, то забиваем только их!
-    if (!structure ){
-        if(this.room.controller.level>3){
+    if (!structure) {
+        if (this.room.controller.level > 3) {
             structure = this.pos.findClosestByPath(FIND_STRUCTURES, {
-                filter: (s) => s.structureType === STRUCTURE_STORAGE &&  s.store[RESOURCE_ENERGY] < s.storeCapacity
+                filter: (s) => s.structureType === STRUCTURE_STORAGE && s.store[RESOURCE_ENERGY] < s.storeCapacity
             });
         }
     }
 
 
     // если все забили, то забиваем все подряд, что еще не наполнено
-    if (!structure){
+    if (!structure) {
         structure = this.pos.findClosestByPath(FIND_STRUCTURES, {
             filter: (s) => ((s.structureType === STRUCTURE_SPAWN
                 || s.structureType === STRUCTURE_EXTENSION
@@ -134,7 +134,6 @@ Creep.prototype.doStore = function () {
                 || ((s.structureType === STRUCTURE_CONTAINER) && s.store[RESOURCE_ENERGY] < s.storeCapacity)
         });
     }
-
 
 
     // совсем на худой конец, есть башни и спауны
@@ -154,17 +153,22 @@ Creep.prototype.doStore = function () {
     }
     if (structure) {
         if (this.transfer(structure, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-            this.moveTo(structure,  {visualizePathStyle: {stroke: '#ffffff'}});
+            this.moveTo(structure, {visualizePathStyle: {stroke: '#ffffff'}});
         }
     }
 
     return true;
 }
 
-Creep.prototype.keepEnergy = function () {
+Creep.prototype.keepEnergy = function (from = null) {
 
     let container;
 
+
+    if (!container)
+        container = this.pos.findClosestByPath(FIND_TOMBSTONES, {
+            filter: x => x.store.energy > 0
+        })
     /*Подымаем выкинутые вещи*/
     if (!container)
         container = this.pos.findClosestByPath(FIND_DROPPED_RESOURCES);
@@ -192,9 +196,93 @@ Creep.prototype.keepEnergy = function () {
             this.moveTo(container, {visualizePathStyle: {stroke: '#ffffff'}});
         }
         return true;
-    }
-    else{
+    } else {
         return this.mineEnergy();
     }
 
+}
+
+Creep.prototype.keepEnergyFromStore = function (from) {
+
+    let container;
+
+    if (!container)
+        container = this.pos.findClosestByPath(FIND_TOMBSTONES, {
+            filter: x => x.store.energy > 0
+        })
+    /*Подымаем выкинутые вещи*/
+    if (!container)
+        container = this.pos.findClosestByPath(FIND_DROPPED_RESOURCES);
+
+   if (!container)
+       container = this.pos.findClosestByPath(FIND_STRUCTURES, {
+           filter: (structure) =>
+               structure.structureType === STRUCTURE_CONTAINER &&
+               structure.pos.x === from.x &&
+               structure.pos.y === from.y &&
+               structure.store[RESOURCE_ENERGY] > 100
+
+       })
+
+    if (!container)
+        return false;
+
+    if (this.withdraw(container, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+        this.moveTo(container, {visualizePathStyle: {stroke: '#ffffff'}});
+    }
+
+    return true;
+
+}
+
+Creep.prototype.storeEnergyToStorage = function (to){
+    const container = this.pos.findClosestByPath(FIND_STRUCTURES, {
+        filter: (structure) =>
+            structure.pos.x === to.x &&
+            structure.pos.y === to.y &&
+            structure.store.getFreeCapacity() > 0
+    })
+
+    if (!container)
+        return false;
+
+    if (this.transfer(container, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+        this.moveTo(container, {visualizePathStyle: {stroke: '#ffffff'}});
+    }
+
+    return true;
+}
+
+StructureTower.prototype.doRepair = function () {
+
+    if (this.store.getUsedCapacity() === 0)
+        return false;
+
+    const target = this.pos.findClosestByPath(FIND_STRUCTURES, {
+        filter: (structure) =>
+            structure.structureType !== STRUCTURE_WALL
+            && structure.structureType !== STRUCTURE_RAMPART
+            && structure.structureType !== STRUCTURE_ROAD
+            && structure.hits < (structure.hitsMax * 0.75)
+    });
+
+    if (target) {
+        this.repair(target)
+    }
+
+    return true
+}
+
+StructureTower.prototype.doDefend = function () {
+
+    if (this.store.getUsedCapacity() === 0)
+        return false;
+
+    let target = this.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+
+    if (target) {
+        this.attack(target);
+    }
+
+    return true
 }

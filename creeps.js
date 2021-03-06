@@ -43,6 +43,24 @@ const repairer = (creep) => {
     }
 }
 
+/** @param {Creep} creep*/
+const lorry = (creep,settings) => {
+    if (creep.store.getFreeCapacity() > 0 && !creep.memory.working){
+        creep.memory.working = false;
+        for (const from of settings.linkerBasic.from) {
+            if (creep.keepEnergyFromStore(from)) break;
+        }
+    }else{
+        creep.memory.working = true;
+        for (const to of settings.linkerBasic.to) {
+            if (creep.storeEnergyToStorage(to)) break;
+        }
+        if (creep.store.getUsedCapacity() === 0 )
+            creep.memory.working = false ;
+    }
+}
+
+
 module.exports = {
-    harvester, builder, updater, harvesterLG, repairer
+    harvester, builder, updater, harvesterLG, repairer, lorry
 }

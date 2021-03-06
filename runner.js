@@ -1,5 +1,6 @@
-const {population} = require('settings')
-const _ = require('lodash')
+const {population} = require('settings');
+const settings = require('settings');
+const _ = require('lodash');
 
 module.exports = () => {
     for (const creepsKey in Game.creeps) {
@@ -9,6 +10,7 @@ module.exports = () => {
             console.log(`[${Game.time}_RUNNER] - cant find role - ${creep.memory.role}`)
             continue;
         }
-        roleInfo.run(creep)
+        roleInfo.run(creep, settings)
+
     }
 }
