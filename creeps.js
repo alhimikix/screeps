@@ -53,7 +53,9 @@ const lorry = (creep,settings) => {
     }else{
         creep.memory.working = true;
         for (const to of settings.linkerBasic.to) {
-            if (creep.storeEnergyToStorage(to)) break;
+            if (creep.storeEnergyToStorage(to)) {
+                break;
+            }
         }
         if (creep.store.getUsedCapacity() === 0 )
             creep.memory.working = false ;

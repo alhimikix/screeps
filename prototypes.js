@@ -240,7 +240,7 @@ Creep.prototype.storeEnergyToStorage = function (to){
         filter: (structure) =>
             structure.pos.x === to.x &&
             structure.pos.y === to.y &&
-            structure.store.getFreeCapacity() > 0
+            (structure.energy < structure.energyCapacity || structure.store.getFreeCapacity()>0)
     })
 
     if (!container)

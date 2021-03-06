@@ -20,7 +20,6 @@ module.exports = {
             {x:39,y:15}, //ext
             {x:41,y:17}, //ext
             {x:41,y:15}, //spawn
-
             {x:41,y:13}, //container
             {x:42,y:16}, //container
             {x:40,y:16}, //container
