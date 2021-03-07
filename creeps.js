@@ -43,7 +43,9 @@ const repairer = (creep) => {
     }
 }
 
-/** @param {Creep} creep*/
+/** @param {Creep} creep
+ * @param settings
+ */
 const lorry = (creep,settings) => {
     if (creep.store.getFreeCapacity() > 0 && !creep.memory.working){
         creep.memory.working = false;
@@ -62,7 +64,31 @@ const lorry = (creep,settings) => {
     }
 }
 
+/** @param {Creep} creep
+ * @param settings
+ */
+const waller = (creep,settings) => {
+    const {maxHitsWalls, maxHitsRampart} = settings.defense;
+
+
+    if (creep.store.getFreeCapacity() > 0 && !creep.memory.working){
+        if (!creep.keepEnergy())
+            creep.memory.working = true;
+    }else{
+        creep.memory.working = creep.doRepairDef(maxHitsWalls, maxHitsRampart);
+    }
+}
+
+const roadRepairer = (creep) => {
+    if (creep.store.getFreeCapacity() > 0 && !creep.memory.working){
+        if (!creep.keepEnergy())
+            creep.memory.working = true;
+    }else{
+        creep.memory.working = creep.doRepairRoads();
+    }
+}
+
 
 module.exports = {
-    harvester, builder, updater, harvesterLG, repairer, lorry
+    harvester, builder, updater, harvesterLG, repairer, lorry, waller, roadRepairer
 }

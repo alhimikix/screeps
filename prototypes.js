@@ -75,6 +75,61 @@ Creep.prototype.doRepair = function () {
     return true
 }
 
+Creep.prototype.doRepairDef = function (maxHitsWalls, maxHitsRampart) {
+
+    if (this.store.getUsedCapacity() === 0)
+        return false;
+
+    let target;
+
+    if (!target) {
+        let targets = this.room.find(FIND_STRUCTURES, {
+            filter: (structure) =>
+                (structure.structureType === STRUCTURE_RAMPART && structure.hits <= maxHitsRampart) ||
+                (structure.structureType === STRUCTURE_WALL && structure.hits <= maxHitsWalls)
+        });
+        targets = _.sortBy(targets,x=>x.hits);
+        if (targets.length)
+            target = targets[0];
+    }
+
+
+    if (target) {
+        if (this.repair(target) === ERR_NOT_IN_RANGE) {
+            this.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+        }
+    } else {
+        return this.doBuild()
+    }
+
+    return true
+}
+
+Creep.prototype.doRepairRoads = function () {
+
+    if (this.store.getUsedCapacity() === 0)
+        return false;
+
+    let target;
+
+    if (!target) {
+        target = this.pos.findClosestByPath(FIND_STRUCTURES, {
+            filter: (structure) =>
+                structure.structureType === STRUCTURE_ROAD && structure.hits <= structure.hitsMax
+        })
+    }
+
+    if (target) {
+        if (this.repair(target) === ERR_NOT_IN_RANGE) {
+            this.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+        }
+    } else {
+        return this.doBuild()
+    }
+
+    return true
+}
+
 Creep.prototype.doStore = function () {
     if (!this.store.getUsedCapacity())
         return false
@@ -214,15 +269,15 @@ Creep.prototype.keepEnergyFromStore = function (from) {
     if (!container)
         container = this.pos.findClosestByPath(FIND_DROPPED_RESOURCES);
 
-   if (!container)
-       container = this.pos.findClosestByPath(FIND_STRUCTURES, {
-           filter: (structure) =>
-               structure.structureType === STRUCTURE_CONTAINER &&
-               structure.pos.x === from.x &&
-               structure.pos.y === from.y &&
-               structure.store[RESOURCE_ENERGY] > 100
+    if (!container)
+        container = this.pos.findClosestByPath(FIND_STRUCTURES, {
+            filter: (structure) =>
+                structure.structureType === STRUCTURE_CONTAINER &&
+                structure.pos.x === from.x &&
+                structure.pos.y === from.y &&
+                structure.store[RESOURCE_ENERGY] > 100
 
-       })
+        })
 
     if (!container)
         return false;
@@ -235,12 +290,12 @@ Creep.prototype.keepEnergyFromStore = function (from) {
 
 }
 
-Creep.prototype.storeEnergyToStorage = function (to){
+Creep.prototype.storeEnergyToStorage = function (to) {
     const container = this.pos.findClosestByPath(FIND_STRUCTURES, {
         filter: (structure) =>
             structure.pos.x === to.x &&
             structure.pos.y === to.y &&
-            (structure.energy < structure.energyCapacity || structure.store.getFreeCapacity()>0)
+            (structure.energy < structure.energyCapacity || structure.store.getFreeCapacity() > 0)
     })
 
     if (!container)
